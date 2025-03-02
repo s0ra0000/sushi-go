@@ -213,7 +213,9 @@ export default function GamePage({
 
   // Socket connection and event listeners.
   useEffect(() => {
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001");
+    socket = io(
+      process.env.NEXT_PUBLIC_SOCKET_URL || "https://api.sushi.psyche.mn"
+    );
 
     // Join the session room.
     socket.emit("joinSessionRoom", { sessionId, token });
