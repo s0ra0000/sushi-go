@@ -45,7 +45,6 @@ export default function Games() {
     fetchSessions();
   }, []);
 
-  // Socket.IO: listen for session list changes.
   useEffect(() => {
     const socket = io(
       process.env.NEXT_PUBLIC_SOCKET_URL || "https://api.sushi.psyche.mn"
@@ -60,10 +59,6 @@ export default function Games() {
       socket.disconnect();
     };
   }, [token]);
-
-  // Close dropdown if click is outside.
-
-  // Create new session and auto-join it.
   const handleCreateSession = async (e: FormEvent) => {
     e.preventDefault();
     try {

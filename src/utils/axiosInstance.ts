@@ -12,9 +12,7 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const accessToken = Cookies.get("token");
     if (accessToken) {
-      // Here we set the token in the Authorization header.
       config.headers.Authorization = `Bearer ${accessToken}`;
-      // Or you can use a custom header like x-token if your backend expects that.
       config.headers["x-token"] = accessToken;
     }
     return config;

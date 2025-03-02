@@ -238,40 +238,29 @@ export default function GamePage({
     }
   };
 
-  // Socket connection and event listeners.
   useEffect(() => {
     socket = io(
       process.env.NEXT_PUBLIC_SOCKET_URL || "https://api.sushi.psyche.mn"
       // process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001"
     );
 
-    // Join the session room.
     socket.emit("joinSessionRoom", { sessionId, token });
     const initSession = async () => {
       const data = await fetchSessionData();
       if (!data) return;
 
-      // Check if player belongs.
       const playerCheck = await checkPlayerBelongs();
-      // console.log(playerCheck.belong);
       const session = data.session;
       if (playerCheck) {
-        // User belongs to this session.
-        console.log("shalda", session.status);
         if (session.status === "ended") {
-          // If the session has ended, show the game end dialog.
-          // setGameEndResults(/* you might want to pass session results if available */);
-          console.log("yes-ended");
           setShowGameEndDialog(true);
         } else if (session.status === "ongoing") {
-          console.log("yes-ongoing");
           fetchPlayerCards();
           fetchTableCards();
           fetchScores();
           console.log(countdown);
           setCountdown(session.remaining_time);
           setRound(session.round_number);
-          // Game is running, so display game UI.
           setIsGameStarted(true);
         } else if (session.status === "pending") {
           console.log("yes-pending");
@@ -289,7 +278,6 @@ export default function GamePage({
 
     initSession();
 
-    // Listen for events.
     socket.on("updatePlayers", (data: { players: Player[] }) => {
       console.log("Received updatePlayers event:", data);
       setGameState((prev) => ({ ...prev, players: data.players }));
@@ -368,7 +356,6 @@ export default function GamePage({
     setSelectedCard(sessioncardid);
   };
 
-  // Function to handle dialog close
   const handleGameEndDialogClose = () => {
     router.push("/games");
   };
@@ -615,8 +602,7 @@ const CardDisplay = ({ card, index }: { card: Card; index: number }) => {
       ? `${card.card_type} ${card.points}`
       : card.card_type;
 
-  // The card's vertical position is incremented slightly based on its index.
-  const offsetY = -index * 70; // Adjust this value to control how much space there is between cards
+  const offsetY = -index * 70;
 
   return (
     <div

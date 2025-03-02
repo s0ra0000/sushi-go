@@ -237,13 +237,13 @@ const StatusBadge = ({ status }: { status: string }) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "pending":
-        return "bg-yellow-500 text-yellow-900"; // Yellow for pending
+        return "bg-yellow-500 text-yellow-900";
       case "ongoing":
-        return "bg-blue-500 text-blue-900"; // Blue for ongoing
+        return "bg-blue-500 text-blue-900";
       case "ended":
-        return "bg-red-500 text-red-900"; // Red for ended
+        return "bg-red-500 text-red-900";
       default:
-        return "bg-gray-500 text-gray-900"; // Gray for unknown status
+        return "bg-gray-500 text-gray-900";
     }
   };
 
