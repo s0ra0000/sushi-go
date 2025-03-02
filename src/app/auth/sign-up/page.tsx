@@ -59,7 +59,7 @@ export default function RegisterPage() {
         }
         setSuccessMessage(data.message || "Successfully registered!");
         // Redirect to /menu after a short delay or immediately
-        router.push("/menu");
+        router.push("/games");
       } else {
         setErrorMessage(data.error || "An error occurred. Please try again.");
       }

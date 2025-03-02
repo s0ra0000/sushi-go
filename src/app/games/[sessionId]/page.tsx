@@ -387,7 +387,7 @@ export default function GamePage({
       <main className="h-screen flex justify-center items-center w-full">
         {sessionData && (
           <div className="my-8 bg-background rounded-lg py-8 px-16 flex flex-col gap-6">
-            <Link href={"/games"}>
+            <Link href="/games">
               <button>Back</button>
             </Link>
             <h1 className="text-3xl">{sessionData.session_name}</h1>
