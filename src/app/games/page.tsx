@@ -49,6 +49,7 @@ export default function Games() {
   useEffect(() => {
     const socket = io(
       process.env.NEXT_PUBLIC_SOCKET_URL || "https://api.sushi.psyche.mn"
+      // process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001"
     );
     socket.emit("session_list", {});
     socket.on("sessions_changed", (data) => {
@@ -93,12 +94,12 @@ export default function Games() {
   };
 
   return (
-    <main className="flex-grow overflow-auto p-4 flex items-center justify-center w-full flex-col">
+    <main className="h-screen flex-grow overflow-auto flex items-center justify-center w-full flex-col">
       <h1 className="mt-8 text-[32px] w-[600px] text-center bg-background py-8 rounded-t-lg">
         Game sessions
       </h1>
       <section
-        className="flex-grow w-[600px] bg-background overflow-auto py-4 px-8 rounded-t 
+        className="flex-grow w-[600px] bg-background overflow-auto px-8 rounded-t
           [&::-webkit-scrollbar]:w-2
           [&::-webkit-scrollbar-track]:rounded-full
           [&::-webkit-scrollbar-track]:bg-gray-100

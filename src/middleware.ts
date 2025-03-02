@@ -3,9 +3,7 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const accessToken = req.cookies.get("token");
-
   const { pathname } = req.nextUrl;
-
   if (
     accessToken &&
     (pathname === "/auth/login" || pathname === "/auth/sign-up")
@@ -17,8 +15,12 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 
-  if (!accessToken && pathname.startsWith("/games")) {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+  if (pathname === "/") {
+    if (accessToken) {
+      return NextResponse.redirect(new URL("/games", req.url));
+    } else {
+      return NextResponse.redirect(new URL("/auth/login", req.url));
+    }
   }
 
   return NextResponse.next();

@@ -52,23 +52,26 @@ interface GameState {
   countdown: number;
 }
 
+interface PlayerScore {
+  username: string;
+  score: number;
+}
+
+interface ScoreResponse {
+  sessionid: number;
+  players: PlayerScore[];
+}
+
 function reverseStack(card: Card): Card {
-  // If this card has no child, it's already the bottom—just return it.
   if (!card.under_table_card) {
     return card;
   }
 
-  // Recurse to find the bottommost card (newRoot).
   const newRoot = reverseStack(card.under_table_card);
 
-  // The child's under_table_card now points back up to the current card,
-  // effectively reversing the link.
   card.under_table_card.under_table_card = card;
 
-  // Remove the old forward link to avoid cycles.
   card.under_table_card = undefined;
-
-  // Return the bottommost card, which is now the root of the reversed chain.
   return newRoot;
 }
 
@@ -87,6 +90,31 @@ export default function GamePage({
     players: [],
     countdown: 0,
   });
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Simple function to show toast
+  const showToast = (message: string) => {
+    setToastMessage(message);
+  };
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  const handleSomeAction = async (toast: string) => {
+    try {
+      console.log(toast);
+      showToast(toast);
+    } catch (error) {
+      console.log(error);
+      showToast(toast);
+    }
+  };
   const [players, setPlayers] = useState<PlayerTable[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
@@ -94,13 +122,13 @@ export default function GamePage({
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [round, setRound] = useState<number>(1);
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
-  const [scores, setScores] = useState<any>(null);
+  const [scores, setScores] = useState<ScoreResponse | null>(null);
   const [placeDisabled, setPlaceDisabled] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   console.log(scores, loading, error);
   const [showGameEndDialog, setShowGameEndDialog] = useState(false);
   const [gameEndResults, setGameEndResults] = useState<any>(null);
-
+  console.log(gameEndResults);
   const checkPlayerBelongs = async () => {
     try {
       const response = await axiosInstance.post("/api/is-player-belongs", {
@@ -189,16 +217,15 @@ export default function GamePage({
     }
   };
 
-  // Fetch scores.
-  // const fetchScores = async () => {
-  //   try {
-  //     const res = await axiosInstance.post("/api/score-round", { sessionId });
-  //     const data = res.data;
-  //     setScores(data);
-  //   } catch (error) {
-  //     console.error("Error fetching scores:", error);
-  //   }
-  // };
+  const fetchScores = async () => {
+    try {
+      const res = await axiosInstance.get(`/api/scores/${sessionId}`);
+      console.log("scores", res.data);
+      setScores(res.data);
+    } catch (error) {
+      console.error("Error fetching scores:", error);
+    }
+  };
 
   const joinSession = async () => {
     try {
@@ -215,6 +242,7 @@ export default function GamePage({
   useEffect(() => {
     socket = io(
       process.env.NEXT_PUBLIC_SOCKET_URL || "https://api.sushi.psyche.mn"
+      // process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001"
     );
 
     // Join the session room.
@@ -239,20 +267,7 @@ export default function GamePage({
           console.log("yes-ongoing");
           fetchPlayerCards();
           fetchTableCards();
-          // if (session?.scheduled_time) {
-          //   const scheduledTime = new Date(session.scheduled_time).getTime();
-          //   const currentTime = Date.now();
-          //   const countdown = Math.max(
-          //     0,
-          //     Math.floor((scheduledTime - currentTime) / 1000)
-          //   );
-          //   console.log("Countdown (s):", session.remaining_time);
-          // }
-
-          // const countdown = Math.max(
-          //   0,
-          //   (new Date(session.scheduled_time).getTime() - Date.now()) / 1000
-          // );
+          fetchScores();
           console.log(countdown);
           setCountdown(session.remaining_time);
           setRound(session.round_number);
@@ -260,21 +275,14 @@ export default function GamePage({
           setIsGameStarted(true);
         } else if (session.status === "pending") {
           console.log("yes-pending");
-
-          // Still waiting to start, so show the wait room.
           setIsGameStarted(false);
         }
       } else {
-        // User does not belong to the session.
         if (session.status === "pending") {
           console.log("no-pending");
-
-          // If session is still pending, allow them to join.
           joinSession();
         } else {
-          // For any other status, indicate that this is not their session.
-          setShowGameEndDialog(true); // This flag can trigger an error message with an exit button.
-          console.log("fuck you self");
+          setShowGameEndDialog(true);
         }
       }
     };
@@ -293,6 +301,8 @@ export default function GamePage({
         setIsGameStarted(true);
         fetchPlayerCards();
         fetchTableCards();
+        fetchScores();
+        handleSomeAction("Game has started");
         setCountdown(data.move_duration);
       }
     );
@@ -302,6 +312,9 @@ export default function GamePage({
       (data: { session_id: string; move_duration: number }) => {
         fetchPlayerCards();
         fetchTableCards();
+        fetchScores();
+        setPlaceDisabled(false);
+        handleSomeAction("New round has started!");
         setRound((prev) => prev + 1);
         setCountdown(data.move_duration);
       }
@@ -312,18 +325,20 @@ export default function GamePage({
       fetchPlayerCards();
       fetchTableCards();
       setPlaceDisabled(false);
+      handleSomeAction("New turn has started!");
       setCountdown(data.move_duration);
     });
 
     socket.on("score_round", (data: { session_id: string; results: any }) => {
-      setScores(data.results);
+      fetchScores();
       console.log("Round scores:", data.results);
     });
 
     socket.on("game_end", (data: { results: any }) => {
       fetchPlayerCards();
       fetchTableCards();
-      setScores(data.results);
+      fetchScores();
+
       setGameEndResults(data.results);
       setShowGameEndDialog(true);
     });
@@ -355,7 +370,6 @@ export default function GamePage({
 
   // Function to handle dialog close
   const handleGameEndDialogClose = () => {
-    localStorage.removeItem("session_id");
     router.push("/games");
   };
 
@@ -391,7 +405,7 @@ export default function GamePage({
             </Link>
             <h1 className="text-3xl">{sessionData.session_name}</h1>
             <div className="mb-4">
-              <h2 className="text-2xl py-8 px-4 rounded text-gray-300 bg-[#1b1b1b]">
+              <h2 className="text-lg py-8 px-16 rounded text-gray-300 bg-[#1b1b1b]">
                 Waiting for players...
               </h2>
               <p className="mt-4">Joined players:</p>
@@ -423,36 +437,82 @@ export default function GamePage({
     );
   } else {
     return (
-      <main className="h-screen ">
-        <div className="">
+      <main className="h-screen w-full px-16 relative">
+        {toastMessage && (
+          <div className="absolute bottom-14 right-4 z-50 transition-all ease-in-out duration-300 opacity-100 animate-slide-down">
+            <p className="bg-primary px-4 py-2 rounded shadow-lg text-lg font-light italic ">
+              {toastMessage}
+            </p>
+          </div>
+        )}
+
+        <div className="absolute bottom-4 left-4">
+          <ul className="space-y-2 border border-gray-600 bg-background rounded-lg">
+            {scores?.players.map((player, index) => (
+              <li key={index} className="flex justify-between p-3 gap-1  ">
+                <span>{index + 1}.</span>
+                <span className="font-semibold">{player.username}: </span>
+                <span className="font-bold text-primary">
+                  {player.score} pts
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="absolute bottom-4 right-4">
           <div className="w-full">
             <h2 className="text-2xl font-semibold mb-2 w-full">
               Round: {round}
             </h2>
-            <h3 className="text-xl mb-4">Time Left: {countdown} seconds</h3>
           </div>
-          <h3 className="text-xl font-semibold mb-2 w-full">
-            Table Cards (All Players)
+        </div>
+        <div className="w-full">
+          <div className="flex justify-between my-4">
+            <button className="">Back to games</button>
+            <div>
+              <h3 className="text-3xl mb-4">Time Left: {countdown} seconds</h3>
+            </div>
+            <button className="text-red-400">
+              <button>Leave session</button>
+            </button>
+          </div>
+          <h3 className="text-xl font-semibold mb-2 w-full text-center">
+            All players table cards
           </h3>
-          <div className="flex flex-col w-full">
+          <div className="flex flex-col w-full mt-4">
             <div className="flex">
-              <div className="flex flex-wrap gap-6 justify-center">
+              <div className="flex flex-wrap gap-6 justify-center items-center w-full">
                 {players.map((player) => (
                   <div
                     key={player.player_id}
-                    className="bg-gray-800 p-4 rounded-lg shadow-lg w-fit"
+                    className="bg-gradient-to-r from-[#441e1d] to-background p-4 rounded-lg shadow-lg min-w-[400px] w-fit"
                   >
                     <h2 className="text-xl font-semibold text-center mb-3">
                       {player.username}
                     </h2>
-                    <div className="flex gap-4 justify-start items-start relative">
+                    <div className="flex gap-4 justify-start items-start relative  h-[200px]">
                       {player.cards.length > 0 ? (
-                        player.cards.map((card) => (
-                          <CardDisplay key={card.tablecard_id} card={card} />
-                        ))
+                        player.cards.map((cardStack) => {
+                          // Flatten and reverse each card chain
+                          const reversedChain = flattenCardChain(cardStack);
+                          return (
+                            <div
+                              key={cardStack.tablecard_id}
+                              className="flex flex-col relative"
+                            >
+                              {reversedChain.map((card, index) => (
+                                <CardDisplay
+                                  key={card.tablecard_id}
+                                  card={card}
+                                  index={index}
+                                />
+                              ))}
+                            </div>
+                          );
+                        })
                       ) : (
-                        <p className="text-gray-400 text-center">
-                          No cards played yet.
+                        <p className="text-gray-300 text-center w-full">
+                          Table is empty.
                         </p>
                       )}
                     </div>
@@ -460,9 +520,9 @@ export default function GamePage({
                 ))}
               </div>
             </div>
-            <div className="">
+            <div className="flex justify-center flex-col w-full items-center mt-8">
               <h3 className="text-xl font-semibold mb-2">Your Hand</h3>
-              <ul className="flex space-y-2">
+              <ul className="flex space-x-1">
                 {handCards.map((card) => {
                   // Build the image file name. For Maki Roll cards, include the score.
                   const imageName =
@@ -473,27 +533,27 @@ export default function GamePage({
                   return (
                     <li
                       key={card.playercard_sessioncardid}
-                      className="p-3 rounded"
+                      className={`border-2 rounded-lg cursor-pointer transition duration-150 ease-in-out ${
+                        selectedCard === card.playercard_sessioncardid
+                          ? "border-primary bg-primary scale-125 " // when selected
+                          : "border-white bg-white" // when not selected (change to your preferred color)
+                      }`}
+                      onClick={() =>
+                        handleCardSelect(card.playercard_sessioncardid)
+                      }
                     >
                       <img
                         src={`/cards/${imageName}.webp`}
                         alt={card.card_type}
-                        style={{ height: "180px", width: "120px" }}
-                        onClick={() =>
-                          handleCardSelect(card.playercard_sessioncardid)
-                        }
-                        className={`border border-white rounded ${
-                          selectedCard === card.playercard_sessioncardid
-                            ? "border-primary border-2 scale-2"
-                            : "border-white border"
-                        }`}
+                        style={{ height: "120px", width: "80px" }}
+                        className="rounded-lg"
                       />
                     </li>
                   );
                 })}
               </ul>
               <button
-                className="mt-6 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded w-full disabled:bg-gray-700"
+                className="mt-6 bg-primary hover:bg-primaryHover text-white px-6 py-3 rounded disabled:bg-gray-700 px-8"
                 onClick={submitCard}
                 disabled={placeDisabled}
               >
@@ -508,13 +568,26 @@ export default function GamePage({
               <h2 className="text-2xl font-bold mb-4">Game Ended!</h2>
               <div className="mb-4">
                 <p className="font-semibold">Final Scores:</p>
-                <pre className="bg-[#1b1b1b] p-4 rounded overflow-auto">
-                  {JSON.stringify(gameEndResults, null, 2)}
+                <pre className="bg-[#1b1b1b] p-4 rounded overflow-auto mt-4">
+                  <ul className="space-y-2  rounded-lg">
+                    {scores?.players.map((player, index) => (
+                      <li
+                        key={index}
+                        className="flex justify-start p-3 gap-1  items-center"
+                      >
+                        <span>{index + 1}.</span>
+                        <span className="">{player.username}: </span>
+                        <span className="font-bold text-primary text-xl">
+                          {player.score} pts
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </pre>
               </div>
               <button
                 onClick={handleGameEndDialogClose}
-                className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                className="w-full bg-primary hover:bg-primaryHover text-white font-bold py-2 px-4 rounded"
               >
                 Exit Game
               </button>
@@ -525,36 +598,35 @@ export default function GamePage({
     );
   }
 }
-// interface CardDisplayProps {
-//   card: Card;
-//   /** Used internally to calculate how far down each subsequent card should appear. */
-//   depth?: number;
-// }
 
-const CardDisplay = ({ card }: { card: Card }) => {
-  // Build the image name. For Maki Roll, include its points.
+const flattenCardChain = (card: Card): Card[] => {
+  const chain: Card[] = [];
+  let currentCard: Card | null = card;
+  while (currentCard) {
+    chain.push(currentCard);
+    currentCard = currentCard.under_table_card || null;
+  }
+  return chain.reverse();
+};
+
+const CardDisplay = ({ card, index }: { card: Card; index: number }) => {
   const imageName =
     card.card_type === "Maki Roll"
       ? `${card.card_type} ${card.points}`
       : card.card_type;
 
-  // If there's an under_table_card, offset the top card by a bit; otherwise, no offset.
-  const topOffset = card.under_table_card ? "top-10" : "top-0";
+  // The card's vertical position is incremented slightly based on its index.
+  const offsetY = -index * 70; // Adjust this value to control how much space there is between cards
 
   return (
-    <div className="relative w-[120px] h-[240px]">
-      {/* Render the under_table_card first (so it stays behind) */}
-      {card.under_table_card && (
-        <div className="absolute top-0 left-0 z-0">
-          <CardDisplay card={card.under_table_card} />
-        </div>
-      )}
-
-      {/* Render the current (top) card with an offset if under_table_card exists */}
+    <div
+      className="relative card bg-white p-px border rounded-lg shadow w-[60px]"
+      style={{ top: `${offsetY}px`, zIndex: index }}
+    >
       <img
         src={`/cards/${imageName}.webp`}
         alt={card.card_type}
-        className={`absolute ${topOffset} left-0 w-[120px] h-[180px] z-10 rounded-md border border-gray-600`}
+        className="relative left-0 w-[60px] h-[90px] z-10 rounded-md border border-gray-600 rounded-lg"
       />
     </div>
   );
