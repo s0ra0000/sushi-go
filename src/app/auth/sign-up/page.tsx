@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import axiosInstance from "@/utils/axiosInstance";
@@ -65,7 +64,6 @@ export default function RegisterPage() {
         setErrorMessage(data.error || "An error occurred. Please try again.");
       }
     } catch (error: any) {
-      // If the server responded with an error status
       if (error.response) {
         setErrorMessage(error.response.data.error || "Server error occurred.");
       } else {

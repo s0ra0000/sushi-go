@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import io from "socket.io-client";
 import Cookies from "js-cookie";
 import axiosInstance from "../../../utils/axiosInstance";
@@ -79,7 +79,6 @@ export default function GamePage({
 }: {
   params: { sessionId: string };
 }) {
-  const params = useParams();
   const token = Cookies.get("token") || "";
   const router = useRouter();
 
@@ -92,14 +91,13 @@ export default function GamePage({
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
   const [handCards, setHandCards] = useState<any[]>([]);
-  const [tableCards, setTableCards] = useState<any[]>([]);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [round, setRound] = useState<number>(1);
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
   const [scores, setScores] = useState<any>(null);
   const [placeDisabled, setPlaceDisabled] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-
+  console.log(scores, loading, error);
   const [showGameEndDialog, setShowGameEndDialog] = useState(false);
   const [gameEndResults, setGameEndResults] = useState<any>(null);
 
@@ -168,7 +166,8 @@ export default function GamePage({
       } else {
         setError(response.data.result_message);
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.log(err);
       setError("Failed to fetch table cards.");
     } finally {
       setLoading(false);
@@ -191,15 +190,15 @@ export default function GamePage({
   };
 
   // Fetch scores.
-  const fetchScores = async () => {
-    try {
-      const res = await axiosInstance.post("/api/score-round", { sessionId });
-      const data = res.data;
-      setScores(data);
-    } catch (error) {
-      console.error("Error fetching scores:", error);
-    }
-  };
+  // const fetchScores = async () => {
+  //   try {
+  //     const res = await axiosInstance.post("/api/score-round", { sessionId });
+  //     const data = res.data;
+  //     setScores(data);
+  //   } catch (error) {
+  //     console.error("Error fetching scores:", error);
+  //   }
+  // };
 
   const joinSession = async () => {
     try {
@@ -238,15 +237,15 @@ export default function GamePage({
           console.log("yes-ongoing");
           fetchPlayerCards();
           fetchTableCards();
-          if (session?.scheduled_time) {
-            const scheduledTime = new Date(session.scheduled_time).getTime();
-            const currentTime = Date.now();
-            const countdown = Math.max(
-              0,
-              Math.floor((scheduledTime - currentTime) / 1000)
-            );
-            console.log("Countdown (s):", session.remaining_time);
-          }
+          // if (session?.scheduled_time) {
+          //   const scheduledTime = new Date(session.scheduled_time).getTime();
+          //   const currentTime = Date.now();
+          //   const countdown = Math.max(
+          //     0,
+          //     Math.floor((scheduledTime - currentTime) / 1000)
+          //   );
+          //   console.log("Countdown (s):", session.remaining_time);
+          // }
 
           // const countdown = Math.max(
           //   0,
@@ -524,11 +523,11 @@ export default function GamePage({
     );
   }
 }
-interface CardDisplayProps {
-  card: Card;
-  /** Used internally to calculate how far down each subsequent card should appear. */
-  depth?: number;
-}
+// interface CardDisplayProps {
+//   card: Card;
+//   /** Used internally to calculate how far down each subsequent card should appear. */
+//   depth?: number;
+// }
 
 const CardDisplay = ({ card }: { card: Card }) => {
   // Build the image name. For Maki Roll, include its points.

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import io from "socket.io-client";
-import Image from "next/image";
 
 interface Session {
   session_id: number;

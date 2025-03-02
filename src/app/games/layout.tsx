@@ -9,7 +9,6 @@ export default function GamesLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [showModal, setShowModal] = useState<boolean>(false);
   const [showRules, setShowRules] = useState<boolean>(false);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
 

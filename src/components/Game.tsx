@@ -11,7 +11,7 @@ export default function Game() {
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
-
+  console.log(playerId);
   useEffect(() => {
     // Connect to the Socket.IO server (assumes it’s running on the same origin)
     socket = io();
