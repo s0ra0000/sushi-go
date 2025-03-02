@@ -455,13 +455,15 @@ export default function GamePage({
         </div>
         <div className="w-full">
           <div className="flex justify-between my-4">
-            <button className="">Back to games</button>
+            <Link href="/games">
+              <button className="">Back to games</button>
+            </Link>
             <div>
               <h3 className="text-3xl mb-4">Time Left: {countdown} seconds</h3>
             </div>
-            <button className="text-red-400">
+            <div className="text-red-400">
               <button>Leave session</button>
-            </button>
+            </div>
           </div>
           <h3 className="text-xl font-semibold mb-2 w-full text-center">
             All players table cards
