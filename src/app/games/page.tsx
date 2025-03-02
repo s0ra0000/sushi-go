@@ -50,7 +50,7 @@ export default function Games() {
   // Socket.IO: listen for session list changes.
   useEffect(() => {
     const socket = io(
-      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001"
+      process.env.NEXT_PUBLIC_SOCKET_URL || "https://api.sushi.psyche.mn"
     );
     socket.emit("session_list", {});
     socket.on("sessions_changed", (data) => {
