@@ -29,9 +29,7 @@ export default function Games() {
   const fetchSessions = async () => {
     setIsLoading(true);
     try {
-      const { data } = await axiosInstance.get("/api/sessions", {
-        headers: { "x-token": token },
-      });
+      const { data } = await axiosInstance.get("/api/sessions");
       if (data.success) {
         setSessions(data.sessions);
       } else {
@@ -68,11 +66,12 @@ export default function Games() {
   const handleCreateSession = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const createRes = await axiosInstance.post(
-        "/api/sessions",
-        { token, sessionName, moveDuration, playerCount: maxPlayers },
-        { headers: { "x-token": token } }
-      );
+      const createRes = await axiosInstance.post("/api/sessions", {
+        token,
+        sessionName,
+        moveDuration,
+        playerCount: maxPlayers,
+      });
       if (!createRes.data.success) {
         alert(createRes.data.result_message);
         return;
